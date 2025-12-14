@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "TestApp",
-    "slug": "TestApp",
+    "name": "Diabetic Retinopathy Screener",
+    "slug": "diabetic-retinopathy-screener",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "testapp",
+    "scheme": "drscreener",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -19,7 +19,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.muhammadidthis.TestApp"
     },
     "web": {
       "output": "static",
@@ -27,6 +28,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos to analyze retinal images.",
+          "cameraPermission": "The app needs access to your camera to capture retinal images."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -43,6 +51,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4603ac6c-3e74-4fcb-8f30-c0e6672d0bd0"
+      }
     }
   }
 }
