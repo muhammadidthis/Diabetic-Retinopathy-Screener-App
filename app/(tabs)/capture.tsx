@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const captureInstructions = [
   'Ensure good lighting conditions',
@@ -27,23 +27,8 @@ export default function CaptureScreen() {
   };
 
   const captureImage = async () => {
-    const permitted = hasPermission || await requestPermissions();
-    
-    if (!permitted) {
-      Alert.alert('Permission Required', 'Camera access is needed to capture images.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setSelectedImage(result.assets[0].uri);
-    }
+    // Navigate to custom camera screen
+    router.push('/camera');
   };
 
   const pickImage = async () => {
@@ -55,7 +40,7 @@ export default function CaptureScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,

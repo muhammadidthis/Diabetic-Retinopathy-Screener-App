@@ -12,7 +12,7 @@ export default function HomeScreen() {
     { icon: 'camera', iconLib: 'Ionicons', label: 'Capture Image', desc: 'Use camera to scan', path: '/(tabs)/capture', color: '#2D9596' },
     { icon: 'cloud-upload-outline', iconLib: 'Ionicons', label: 'Upload Image', desc: 'From gallery', path: '/(tabs)/capture', color: '#34A853' },
     { icon: 'bar-chart-outline', iconLib: 'Ionicons', label: 'View History', desc: '12 scans', path: '/(tabs)/explore', color: '#F9A826' },
-    { icon: 'person-outline', iconLib: 'Ionicons', label: 'My Profile', desc: 'Settings & info', path: '/(tabs)/profile', color: '#5F6368' },
+    { icon: 'school', iconLib: 'Ionicons', label: 'Learn About DR', desc: 'Education', path: '/education', color: '#3AAFB0' },
   ];
 
   return (

@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [name, setName] = useState('Dr. Muhammad');
   const [email, setEmail] = useState('muhammad@hospital.com');
   const [phone, setPhone] = useState('+1 234 567 8900');
@@ -30,8 +32,9 @@ export default function ProfileScreen() {
           text: 'Logout', 
           style: 'destructive',
           onPress: () => {
-            // In a real app, clear session and navigate to login
-            Alert.alert('Logged Out', 'You have been logged out successfully');
+            // Clear user data and navigate to login
+            AsyncStorage.removeItem('user_profile');
+            router.replace('/login');
           }
         }
       ]

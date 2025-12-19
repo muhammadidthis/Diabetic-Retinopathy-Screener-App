@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Share, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type SeverityLevel = 'No DR' | 'Mild' | 'Moderate' | 'Severe' | 'Proliferative DR';
 
@@ -225,6 +225,28 @@ export default function ResultsScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
+          {/* Find Ophthalmologist Button - Show if DR detected */}
+          {severity !== 'No DR' && (
+            <TouchableOpacity
+              style={styles.recommendButton}
+              onPress={() => router.push({
+                pathname: '/ophthalmologists',
+                params: { severity }
+              })}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#34A853', '#45C464']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                <Ionicons name="location" size={20} color="#fff" />
+                <Text style={styles.primaryButtonText}>Find Ophthalmologist</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.secondaryButtons}>
             <TouchableOpacity
               style={styles.secondaryButton}
@@ -420,6 +442,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   primaryButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  recommendButton: {
     borderRadius: 16,
     overflow: 'hidden',
   },
