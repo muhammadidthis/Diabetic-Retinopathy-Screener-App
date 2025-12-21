@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -11,18 +12,34 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // Simulate login delay
     setIsLoading(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsLoading(false);
-      // Navigate to home
-      router.replace('/(tabs)');
+      // Check if first launch
+      try {
+        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+        if (hasLaunched) {
+          // Already launched before, go to dashboard
+          router.replace('/(tabs)');
+        } else {
+          // First launch, go to onboarding
+          router.replace('/onboarding');
+        }
+      } catch (error) {
+        console.error('Error checking first launch:', error);
+        router.replace('/(tabs)');
+      }
     }, 1500);
   };
 
   const handleSignUp = () => {
     router.push('/signup');
+  };
+
+  const handleAboutApp = () => {
+    router.push('/onboarding');
   };
 
   const handleForgotPassword = () => {
@@ -155,6 +172,16 @@ export default function LoginScreen() {
             <Text style={styles.signUpLink}>Create one</Text>
           </TouchableOpacity>
         </View>
+
+        {/* About App Button */}
+        <TouchableOpacity
+          onPress={handleAboutApp}
+          disabled={isLoading}
+          style={styles.aboutButton}
+        >
+          <Ionicons name="information-circle-outline" size={20} color="#2D9596" />
+          <Text style={styles.aboutButtonText}>About the App</Text>
+        </TouchableOpacity>
 
         {/* Footer */}
         <View style={styles.footer}>
@@ -306,6 +333,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#2D9596',
     fontWeight: '700',
+  },
+  aboutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    marginBottom: 24,
+    gap: 8,
+  },
+  aboutButtonText: {
+    fontSize: 14,
+    color: '#2D9596',
+    fontWeight: '600',
   },
   footer: {
     marginBottom: 20,

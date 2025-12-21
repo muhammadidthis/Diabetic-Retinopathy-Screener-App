@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Image, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
 
 type SeverityLevel = 'No DR' | 'Mild' | 'Moderate' | 'Severe' | 'Proliferative DR';
 
@@ -15,15 +16,63 @@ const severityDescriptions = {
   'Proliferative DR': 'Advanced diabetic retinopathy. Urgent medical care required.'
 };
 
+const severityDetails = {
+  'No DR': {
+    title: 'No Diabetic Retinopathy',
+    description: 'Your retinal scan shows no signs of diabetic retinopathy. Continue regular eye checkups.',
+    action: 'Schedule annual eye exams'
+  },
+  'Mild': {
+    title: 'Mild Non-Proliferative DR',
+    description: 'Small areas of balloon-like swelling in blood vessels (microaneurysms). Early intervention can prevent progression.',
+    action: 'Follow-up in 6-12 months'
+  },
+  'Moderate': {
+    title: 'Moderate Non-Proliferative DR',
+    description: 'Blood vessels nourishing the retina are blocked. This can lead to more severe forms without treatment.',
+    action: 'Ophthalmologist consultation required'
+  },
+  'Severe': {
+    title: 'Severe Non-Proliferative DR',
+    description: 'Many blood vessels are blocked, depriving areas of the retina of blood supply. High risk of progression.',
+    action: 'Immediate specialist referral needed'
+  },
+  'Proliferative DR': {
+    title: 'Proliferative Diabetic Retinopathy',
+    description: 'Advanced stage with new abnormal blood vessels growing. Can cause serious vision loss or blindness.',
+    action: 'Urgent treatment required'
+  }
+};
+
 export default function ResultsScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const imageUri = params.imageUri as string;
   const [isSaving, setIsSaving] = useState(false);
+  
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
 
-  // Simulated AI analysis result (in real app, this would come from backend)
-  const severity: SeverityLevel = 'Moderate';
-  const confidence = 87.5;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 50,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Get severity and confidence from params if available (from history), otherwise use simulated values
+  const severity: SeverityLevel = (params.severity as SeverityLevel) || 'Moderate';
+  const confidence = params.confidence ? parseFloat(params.confidence as string) : 87.5;
+  const analysisDate = params.date ? new Date(params.date as string) : new Date();
 
   const getSeverityColor = (level: SeverityLevel) => {
     const colors = {
@@ -95,7 +144,15 @@ export default function ResultsScreen() {
         <Text style={styles.title}>Analysis Results</Text>
       </LinearGradient>
 
-      <View style={styles.content}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
         {/* Result Card */}
         <View style={styles.resultCard}>
           {/* Image with Badge */}
@@ -109,6 +166,95 @@ export default function ResultsScreen() {
           </View>
 
           <View style={styles.detailsContainer}>
+            {/* LARGE SEVERITY BOX - HERO SECTION */}
+            <LinearGradient
+              colors={[
+                getSeverityColor(severity),
+                getSeverityColor(severity) + 'DD'
+              ]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroSeverityBox}
+            >
+              <View style={styles.heroSeverityContent}>
+                <Ionicons
+                  name={isHealthy ? 'checkmark-circle' : 'alert-circle'}
+                  size={56}
+                  color="#fff"
+                />
+                <View style={styles.heroTextContainer}>
+                  <Text style={styles.heroSeverityLabel}>Severity Level</Text>
+                  <Text style={styles.heroSeverityTitle}>{severityDetails[severity].title}</Text>
+                  <Text style={styles.heroSeverityBadge}>{severity}</Text>
+                </View>
+              </View>
+              <View style={styles.heroActionBox}>
+                <Ionicons name="calendar" size={18} color="#fff" />
+                <Text style={styles.heroActionText}>{severityDetails[severity].action}</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Decorative Separator */}
+            <View style={styles.decorativeSeparator}>
+              <View style={styles.separatorLine} />
+              <Ionicons name="analytics" size={18} color="#2D9596" />
+              <View style={styles.separatorLine} />
+            </View>
+
+            {/* CIRCULAR CONFIDENCE SCORE */}
+            <View style={styles.confidenceSection}>
+              <Text style={styles.largeSectionLabel}>AI Confidence Score</Text>
+              <View style={styles.circularProgressContainer}>
+                <Svg width={180} height={180}>
+                  {/* Background Circle */}
+                  <Circle
+                    cx={90}
+                    cy={90}
+                    r={75}
+                    stroke="#E8EFEF"
+                    strokeWidth={12}
+                    fill="none"
+                  />
+                  {/* Progress Circle */}
+                  <Circle
+                    cx={90}
+                    cy={90}
+                    r={75}
+                    stroke="#2D9596"
+                    strokeWidth={12}
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 75}`}
+                    strokeDashoffset={2 * Math.PI * 75 * (1 - confidence / 100)}
+                    strokeLinecap="round"
+                    rotation="-90"
+                    origin="90, 90"
+                  />
+                </Svg>
+                <View style={styles.circularProgressText}>
+                  <Text style={styles.confidencePercentage}>{confidence}%</Text>
+                  <Text style={styles.confidenceLabel}>Accuracy</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Decorative Separator */}
+            <View style={styles.decorativeSeparator}>
+              <View style={styles.separatorLine} />
+              <Ionicons name="information-circle" size={18} color="#2D9596" />
+              <View style={styles.separatorLine} />
+            </View>
+
+            {/* Severity Description Card */}
+            <View style={styles.severityDetailCard}>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(249, 168, 38, 0.1)' }]}>
+                  <Ionicons name="document-text" size={22} color="#F9A826" />
+                </View>
+                <Text style={styles.largeSectionLabel}>What This Means</Text>
+              </View>
+              <Text style={styles.severityDetailDescription}>{severityDetails[severity].description}</Text>
+            </View>
+
             {/* Status Banner */}
             <View style={[
               styles.statusBanner,
@@ -121,8 +267,8 @@ export default function ResultsScreen() {
               }
             ]}>
               <Ionicons
-                name={isHealthy ? 'checkmark-circle' : 'alert-circle'}
-                size={24}
+                name={isHealthy ? 'checkmark-circle' : 'warning'}
+                size={28}
                 color={isHealthy ? '#34A853' : isSevere ? '#EA4335' : '#F9A826'}
               />
               <View style={styles.statusTextContainer}>
@@ -142,52 +288,23 @@ export default function ResultsScreen() {
               </View>
             </View>
 
-            {/* Confidence Score */}
-            <View style={styles.confidenceSection}>
-              <Text style={styles.sectionLabel}>Confidence Score</Text>
-              <View style={styles.confidenceRow}>
-                <View style={styles.progressBarContainer}>
-                  <View 
-                    style={[
-                      styles.progressBar, 
-                      { width: `${confidence}%`, backgroundColor: '#2D9596' }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.confidenceValue}>{confidence}%</Text>
-              </View>
-            </View>
-
-            {/* Severity Level Indicator */}
-            <View style={styles.severitySection}>
-              <Text style={styles.sectionLabel}>Severity Level</Text>
-              <View style={styles.severityBar}>
-                <View style={[styles.severityDot, { backgroundColor: '#34A853' }]}>
-                  {severity === 'No DR' && <View style={styles.activeDot} />}
-                </View>
-                <View style={[styles.severityLine, { backgroundColor: severity !== 'No DR' ? '#2D9596' : '#E8EFEF' }]} />
-                
-                <View style={[styles.severityDot, { backgroundColor: '#FFCC00' }]}>
-                  {severity === 'Mild' && <View style={styles.activeDot} />}
-                </View>
-                <View style={[styles.severityLine, { backgroundColor: severity === 'Moderate' || severity === 'Severe' || severity === 'Proliferative DR' ? '#2D9596' : '#E8EFEF' }]} />
-                
-                <View style={[styles.severityDot, { backgroundColor: '#F9A826' }]}>
-                  {severity === 'Moderate' && <View style={styles.activeDot} />}
-                </View>
-                <View style={[styles.severityLine, { backgroundColor: severity === 'Severe' || severity === 'Proliferative DR' ? '#2D9596' : '#E8EFEF' }]} />
-                
-                <View style={[styles.severityDot, { backgroundColor: '#EA4335' }]}>
-                  {(severity === 'Severe' || severity === 'Proliferative DR') && <View style={styles.activeDot} />}
-                </View>
-              </View>
+            {/* Decorative Separator */}
+            <View style={styles.decorativeSeparator}>
+              <View style={styles.separatorLine} />
+              <Ionicons name="time" size={18} color="#2D9596" />
+              <View style={styles.separatorLine} />
             </View>
 
             {/* Date */}
             <View style={styles.dateSection}>
-              <Text style={styles.sectionLabel}>Analysis Date</Text>
+              <View style={styles.sectionHeader}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(107, 114, 128, 0.1)' }]}>
+                  <Ionicons name="calendar-outline" size={22} color="#6B7280" />
+                </View>
+                <Text style={styles.largeSectionLabel}>Analysis Date</Text>
+              </View>
               <Text style={styles.dateText}>
-                {new Date().toLocaleDateString('en-US', {
+                {analysisDate.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -274,7 +391,7 @@ export default function ResultsScreen() {
           professional medical diagnosis. Please consult an ophthalmologist for
           confirmed results.
         </Text>
-      </View>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -324,7 +441,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
-    aspectRatio: 16 / 9,
+    aspectRatio: 1,
     backgroundColor: '#F3F4F6',
   },
   image: {
@@ -350,32 +467,173 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 20,
   },
+  heroSeverityBox: {
+    padding: 24,
+    borderRadius: 20,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  heroSeverityContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  heroTextContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  heroSeverityLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  heroSeverityTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    lineHeight: 28,
+  },
+  heroSeverityBadge: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  heroActionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 12,
+  },
+  heroActionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  circularProgressContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+    position: 'relative',
+  },
+  circularProgressText: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confidencePercentage: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#2D9596',
+  },
+  confidenceLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  largeSectionLabel: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
   statusBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    padding: 16,
+    gap: 14,
+    padding: 18,
     borderRadius: 16,
   },
   statusTextContainer: {
     flex: 1,
   },
   statusTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   statusDescription: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#6B7280',
-    lineHeight: 18,
+    lineHeight: 20,
   },
   confidenceSection: {
-    gap: 8,
+    gap: 12,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 15,
+    fontWeight: '600',
     color: '#6B7280',
+  },
+  decorativeSeparator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  separatorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E8EFEF',
+  },
+  severityDetailCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 14,
+    padding: 18,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#E8EFEF',
+  },
+  severityHeaderText: {
+    flex: 1,
+    gap: 4,
+  },
+  severityDetailTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  severityDetailBadge: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#F9A826',
+  },
+  severityDetailDescription: {
+    fontSize: 15,
+    color: '#6B7280',
+    lineHeight: 22,
+  },
+  actionBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(45, 149, 150, 0.05)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#2D9596',
   },
   confidenceRow: {
     flexDirection: 'row',
@@ -398,44 +656,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2D9596',
   },
-  severitySection: {
-    gap: 8,
-  },
-  severityBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  severityDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#fff',
-  },
-  severityLine: {
-    flex: 1,
-    height: 4,
-    marginHorizontal: 4,
-  },
   dateSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E8EFEF',
+    gap: 12,
   },
   dateText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1A1A1A',
+    marginLeft: 50,
   },
   actionButtons: {
     gap: 12,

@@ -1,4 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -42,16 +44,22 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#2D9596', '#3AAFB0']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{name.charAt(0)}</Text>
         </View>
         <Text style={styles.headerName}>{name}</Text>
         <Text style={styles.headerEmail}>{email}</Text>
-      </View>
+      </LinearGradient>
 
-      <View style={styles.section}>
+      <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContentContainer}>
+        <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Personal Information</Text>
           <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
@@ -107,7 +115,15 @@ export default function ProfileScreen() {
 
         {isEditing && (
           <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
-            <Text style={styles.saveButtonText}>💾 Save Changes</Text>
+            <LinearGradient
+              colors={['#34C759', '#45D768']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.saveButtonGradient}
+            >
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+              <Text style={styles.saveButtonText}>Save Changes</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </View>
@@ -131,59 +147,90 @@ export default function ProfileScreen() {
         <Text style={styles.sectionTitle}>App Settings</Text>
         
         <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>🔔 Notifications</Text>
-          <Text style={styles.arrow}>›</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingIcon}>
+              <Ionicons name="notifications" size={20} color="#2D9596" />
+            </View>
+            <Text style={styles.settingText}>Notifications</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>🔒 Privacy & Security</Text>
-          <Text style={styles.arrow}>›</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingIcon}>
+              <Ionicons name="lock-closed" size={20} color="#2D9596" />
+            </View>
+            <Text style={styles.settingText}>Privacy & Security</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>❓ Help & Support</Text>
-          <Text style={styles.arrow}>›</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingIcon}>
+              <Ionicons name="help-circle" size={20} color="#2D9596" />
+            </View>
+            <Text style={styles.settingText}>Help & Support</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.settingItem}>
-          <Text style={styles.settingText}>ℹ️ About</Text>
-          <Text style={styles.arrow}>›</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingIcon}>
+              <Ionicons name="information-circle" size={20} color="#2D9596" />
+            </View>
+            <Text style={styles.settingText}>About</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutButtonText}>🚪 Logout</Text>
+        <View style={styles.logoutContent}>
+          <Ionicons name="log-out" size={20} color="#FF3B30" />
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </View>
       </TouchableOpacity>
 
       <Text style={styles.version}>Version 1.0.0</Text>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFA',
   },
   header: {
-    backgroundColor: '#007AFF',
     padding: 30,
     paddingTop: 60,
     alignItems: 'center',
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    paddingBottom: 20,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
+    borderWidth: 3,
+    borderColor: '#fff',
   },
   avatarText: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#fff',
   },
   headerName: {
     fontSize: 24,
@@ -193,18 +240,22 @@ const styles = StyleSheet.create({
   },
   headerEmail: {
     fontSize: 16,
-    color: '#E6F4FE',
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   section: {
     backgroundColor: '#fff',
-    margin: 20,
+    margin: 16,
+    marginBottom: 0,
+    marginTop: 16,
     padding: 20,
-    borderRadius: 12,
-    shadowColor: '#000',
+    borderRadius: 16,
+    shadowColor: '#2D9596',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8EFEF',
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -214,103 +265,132 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 16,
   },
   editButton: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#2D9596',
     fontWeight: '600',
   },
   formGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#6B7280',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#F9FAFB',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
     padding: 15,
     fontSize: 16,
-    color: '#333',
+    color: '#1A1A1A',
   },
   inputDisabled: {
-    backgroundColor: '#f0f0f0',
-    color: '#999',
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
   },
   saveButton: {
-    backgroundColor: '#34C759',
-    padding: 18,
-    borderRadius: 10,
-    alignItems: 'center',
+    borderRadius: 12,
+    overflow: 'hidden',
     marginTop: 10,
+  },
+  saveButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
   },
   saveButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginTop: 8,
   },
   statCard: {
     alignItems: 'center',
     padding: 15,
+    backgroundColor: 'rgba(45, 149, 150, 0.05)',
+    borderRadius: 12,
+    flex: 1,
+    marginHorizontal: 8,
   },
   statNumber: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#2D9596',
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+    fontWeight: '500',
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#F3F4F6',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(45, 149, 150, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   settingText: {
     fontSize: 16,
-    color: '#333',
-  },
-  arrow: {
-    fontSize: 20,
-    color: '#C7C7CC',
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
-    margin: 20,
-    marginTop: 0,
+    backgroundColor: '#fff',
+    margin: 16,
+    marginTop: 16,
     padding: 18,
-    borderRadius: 10,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#FF3B30',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 3,
+    borderWidth: 2,
+    borderColor: '#FF3B30',
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   logoutButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+    color: '#FF3B30',
+    fontSize: 16,
+    fontWeight: '700',
   },
   version: {
     textAlign: 'center',
-    color: '#999',
+    color: '#9CA3AF',
     fontSize: 12,
     marginTop: 10,
     marginBottom: 30,

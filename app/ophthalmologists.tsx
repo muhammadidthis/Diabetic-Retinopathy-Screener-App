@@ -191,7 +191,7 @@ export default function OphthalmologistsScreen() {
               {/* Hospital & Distance */}
               <View style={styles.doctorDetails}>
                 <View style={styles.detailRow}>
-                  <Ionicons name="hospital" size={16} color="#2D9596" />
+                  <Ionicons name="business" size={16} color="#2D9596" />
                   <Text style={styles.detailText}>{doctor.hospital}</Text>
                 </View>
                 <View style={styles.detailRow}>

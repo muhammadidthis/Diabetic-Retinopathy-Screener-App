@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { analyzeRetinalImage } from '../../services/roboflowApi';
 
 const captureInstructions = [
   'Ensure good lighting conditions',
@@ -16,8 +17,9 @@ export default function CaptureScreen() {
   const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
-  const [mode, setMode] = useState<'capture' | 'upload'>('capture');
+  const [mode, setMode] = useState<'capture' | 'upload'>('upload');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState('');
 
   const requestPermissions = async () => {
     const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
@@ -58,17 +60,44 @@ export default function CaptureScreen() {
     }
     
     setIsAnalyzing(true);
+    setAnalysisStep('Preparing image...');
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    
-    setIsAnalyzing(false);
-    
-    // Navigate to results page with the image
-    router.push({
-      pathname: '/results',
-      params: { imageUri: selectedImage }
-    });
+    try {
+      const result = await analyzeRetinalImage(selectedImage, (step) => {
+        setAnalysisStep(step);
+      });
+      
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+      
+      console.log('Step 3: Navigating to results page...');
+      
+      // Navigate to results page with actual API data
+      router.push({
+        pathname: '/results',
+        params: {
+          imageUri: result.imageUri,
+          severity: result.severity,
+          confidence: result.confidence.toString(),
+          date: result.date,
+        }
+      });
+    } catch (error: any) {
+      setIsAnalyzing(false);
+      setAnalysisStep('');
+      
+      Alert.alert(
+        'Analysis Failed',
+        `Failed to analyze the image. Please check your internet connection and try again.\n\nError: ${error.message}`,
+        [
+          { text: 'OK' },
+          {
+            text: 'Try Again',
+            onPress: () => analyzeImage(),
+          },
+        ]
+      );
+    }
   };
 
   const clearImage = () => {
@@ -76,7 +105,7 @@ export default function CaptureScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={['#2D9596', '#3AAFB0']}
         start={{ x: 0, y: 0 }}
@@ -86,7 +115,7 @@ export default function CaptureScreen() {
         <Text style={styles.title}>Scan Retina</Text>
       </LinearGradient>
 
-      <View style={styles.content}>
+      <ScrollView style={styles.scrollContent} contentContainerStyle={styles.scrollContentContainer}>
         {/* Mode Toggle */}
         <View style={styles.modeToggle}>
           <TouchableOpacity
@@ -205,7 +234,7 @@ export default function CaptureScreen() {
             activeOpacity={0.8}
           >
             <LinearGradient
-              colors={['#2D9596', '#3AAFB0']}
+              colors={isAnalyzing ? ['#6B7280', '#9CA3AF'] : ['#2D9596', '#3AAFB0']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.buttonGradient}
@@ -213,7 +242,7 @@ export default function CaptureScreen() {
               {isAnalyzing ? (
                 <>
                   <ActivityIndicator size="small" color="#fff" />
-                  <Text style={styles.primaryButtonText}>Analyzing...</Text>
+                  <Text style={styles.primaryButtonText}>{analysisStep || 'Analyzing...'}</Text>
                 </>
               ) : (
                 <>
@@ -223,6 +252,39 @@ export default function CaptureScreen() {
               )}
             </LinearGradient>
           </TouchableOpacity>
+        )}
+
+        {/* Loading Overlay */}
+        {isAnalyzing && (
+          <View style={styles.loadingOverlay}>
+            <View style={styles.loadingCard}>
+              <ActivityIndicator size="large" color="#2D9596" />
+              <Text style={styles.loadingTitle}>Analyzing Retinal Image</Text>
+              <Text style={styles.loadingStep}>{analysisStep}</Text>
+              <View style={styles.loadingSteps}>
+                <View style={styles.stepIndicator}>
+                  <Ionicons name="image" size={20} color={analysisStep.includes('Preparing') || analysisStep.includes('Converting') ? '#2D9596' : '#E8EFEF'} />
+                  <Text style={[styles.stepText, (analysisStep.includes('Preparing') || analysisStep.includes('Converting')) && styles.stepTextActive]}>
+                    Convert
+                  </Text>
+                </View>
+                <View style={styles.stepDivider} />
+                <View style={styles.stepIndicator}>
+                  <Ionicons name="cloud-upload" size={20} color={analysisStep.includes('Sending') ? '#2D9596' : '#E8EFEF'} />
+                  <Text style={[styles.stepText, analysisStep.includes('Sending') && styles.stepTextActive]}>
+                    Upload
+                  </Text>
+                </View>
+                <View style={styles.stepDivider} />
+                <View style={styles.stepIndicator}>
+                  <Ionicons name="analytics" size={20} color={analysisStep.includes('Processing') ? '#2D9596' : '#E8EFEF'} />
+                  <Text style={[styles.stepText, analysisStep.includes('Processing') && styles.stepTextActive]}>
+                    Process
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
         )}
 
         {/* Instructions */}
@@ -240,8 +302,8 @@ export default function CaptureScreen() {
             ))}
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -260,8 +322,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  content: {
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 16,
+    gap: 16,
+  },
+  content: {
     gap: 16,
   },
   modeToggle: {
@@ -494,5 +562,64 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    width: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  loadingTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  loadingStep: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 24,
+  },
+  loadingSteps: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  stepIndicator: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  stepDivider: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#E8EFEF',
+    marginHorizontal: 8,
+  },
+  stepText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#9CA3AF',
+  },
+  stepTextActive: {
+    color: '#2D9596',
   },
 });

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface HistoryItem {
   id: string;
@@ -124,7 +124,12 @@ export default function HistoryScreen() {
             style={styles.historyItem}
             onPress={() => router.push({
               pathname: '/results',
-              params: { imageUri: item.imageUri }
+              params: { 
+                imageUri: item.imageUri,
+                severity: item.severity,
+                confidence: item.confidence.toString(),
+                date: item.date
+              }
             })}
             activeOpacity={0.7}
           >

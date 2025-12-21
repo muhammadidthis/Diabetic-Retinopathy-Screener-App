@@ -28,9 +28,7 @@ export default function CameraScreen() {
     if (!cameraRef.current) return;
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        flash: flashOn ? 'on' : 'off'
-      });
+      const photo = await cameraRef.current.takePictureAsync();
       if (photo) {
         router.back();
         setTimeout(() => {
@@ -51,7 +49,7 @@ export default function CameraScreen() {
         ref={cameraRef}
         style={styles.camera}
         facing="back"
-        flash={flashOn ? 'on' : 'off'}
+        enableTorch={flashOn}
       />
 
       {/* Close Button */}
