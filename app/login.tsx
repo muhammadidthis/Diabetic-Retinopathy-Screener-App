@@ -2,8 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth } from '../config/firebase';
+import { getAuthErrorMessage, resetPassword, signInWithEmail } from '../services/authService';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -12,26 +15,52 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async () => {
-    // Simulate login delay
-    setIsLoading(true);
-    setTimeout(async () => {
-      setIsLoading(false);
-      // Check if first launch
-      try {
-        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-        if (hasLaunched) {
-          // Already launched before, go to dashboard
+  useEffect(() => {
+    // Check if user is already logged in
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in, check first launch
+        try {
+          const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+          if (hasLaunched) {
+            router.replace('/(tabs)');
+          } else {
+            router.replace('/onboarding');
+          }
+        } catch (error) {
+          console.error('Error checking first launch:', error);
           router.replace('/(tabs)');
-        } else {
-          // First launch, go to onboarding
-          router.replace('/onboarding');
         }
-      } catch (error) {
-        console.error('Error checking first launch:', error);
-        router.replace('/(tabs)');
       }
-    }, 1500);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await signInWithEmail(email, password);
+      
+      // Check if first launch
+      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      if (hasLaunched) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/onboarding');
+      }
+    } catch (error: any) {
+      const errorMessage = getAuthErrorMessage(error.code);
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignUp = () => {
@@ -43,7 +72,33 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert('Reset Password', 'Enter your email to receive password reset instructions');
+    Alert.alert(
+      'Reset Password',
+      'Enter your email address',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Send',
+          onPress: async () => {
+            if (!email) {
+              Alert.alert('Error', 'Please enter your email address first');
+              return;
+            }
+            try {
+              await resetPassword(email);
+              Alert.alert('Success', 'Password reset email sent! Check your inbox.');
+            } catch (error: any) {
+              const errorMessage = getAuthErrorMessage(error.code);
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (

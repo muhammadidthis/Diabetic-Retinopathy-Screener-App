@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { getAuthErrorMessage, signUpWithEmail } from '../services/authService';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -31,12 +32,29 @@ export default function SignUpScreen() {
     }
 
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      await signUpWithEmail(email, password, fullName);
+      
+      Alert.alert(
+        'Success',
+        'Account created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/onboarding'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Signup error in UI:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      const errorMessage = getAuthErrorMessage(error.code);
+      Alert.alert('Signup Failed', errorMessage);
+    } finally {
       setIsLoading(false);
-      Alert.alert('Success', 'Account created successfully!', [
-        { text: 'OK', onPress: () => router.replace('/login') }
-      ]);
-    }, 1500);
+    }
   };
 
   const handleBackToLogin = () => {

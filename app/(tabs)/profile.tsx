@@ -1,26 +1,64 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth } from '../../config/firebase';
+import { getUserProfile, logOut, updateUserProfile } from '../../services/authService';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [name, setName] = useState('Dr. Muhammad');
-  const [email, setEmail] = useState('muhammad@hospital.com');
-  const [phone, setPhone] = useState('+1 234 567 8900');
-  const [specialty, setSpecialty] = useState('Ophthalmology');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const profile = await getUserProfile(user.uid);
+          if (profile) {
+            setName(profile.displayName || '');
+            setEmail(profile.email || '');
+            setPhone(profile.phone || '');
+          }
+        } catch (error) {
+          console.error('Error loading profile:', error);
+          Alert.alert('Error', 'Failed to load profile data');
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        router.replace('/login');
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   const saveProfile = async () => {
+    if (!auth.currentUser) {
+      Alert.alert('Error', 'No user logged in');
+      return;
+    }
+
+    setIsSaving(true);
     try {
-      const profile = { name, email, phone, specialty };
-      await AsyncStorage.setItem('user_profile', JSON.stringify(profile));
+      await updateUserProfile(auth.currentUser.uid, {
+        displayName: name,
+        phone,
+      });
       setIsEditing(false);
       Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
+      console.error('Error saving profile:', error);
       Alert.alert('Error', 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -33,15 +71,28 @@ export default function ProfileScreen() {
         { 
           text: 'Logout', 
           style: 'destructive',
-          onPress: () => {
-            // Clear user data and navigate to login
-            AsyncStorage.removeItem('user_profile');
-            router.replace('/login');
+          onPress: async () => {
+            try {
+              await logOut();
+              router.replace('/login');
+            } catch (error) {
+              console.error('Error logging out:', error);
+              Alert.alert('Error', 'Failed to logout');
+            }
           }
         }
       ]
     );
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2D9596" />
+        <Text style={styles.loadingText}>Loading profile...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -52,7 +103,7 @@ export default function ProfileScreen() {
         style={styles.header}
       >
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{name.charAt(0)}</Text>
+          <Text style={styles.avatarText}>{name.charAt(0) || 'U'}</Text>
         </View>
         <Text style={styles.headerName}>{name}</Text>
         <Text style={styles.headerEmail}>{email}</Text>
@@ -102,27 +153,26 @@ export default function ProfileScreen() {
           />
         </View>
 
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Specialty</Text>
-          <TextInput
-            style={[styles.input, !isEditing && styles.inputDisabled]}
-            value={specialty}
-            onChangeText={setSpecialty}
-            editable={isEditing}
-            placeholder="Enter your specialty"
-          />
-        </View>
-
         {isEditing && (
-          <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={saveProfile}
+            disabled={isSaving}
+          >
             <LinearGradient
               colors={['#34C759', '#45D768']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.saveButtonGradient}
             >
-              <Ionicons name="checkmark-circle" size={20} color="#fff" />
-              <Text style={styles.saveButtonText}>Save Changes</Text>
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -394,5 +444,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 10,
     marginBottom: 30,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F9FA',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6B7280',
   },
 });
